@@ -78,7 +78,7 @@ services:
       - broker
       - schema-registry
     environment: 
-      BROKER: "broker:9092"
+      BROKER: "broker.confluent_kafka:29092"
       SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
     networks:
       - kafka
