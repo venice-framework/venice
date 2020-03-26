@@ -28,7 +28,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
@@ -41,10 +41,10 @@ services:
     networks:
       - kafka
 
-  schema-registry:
+  schema_registry:
     image: confluentinc/cp-schema-registry:5.4.1
-    hostname: schema-registry
-    container_name: schema-registry
+    hostname: schema_registry
+    container_name: schema_registry
     depends_on:
       - zookeeper
       - broker
@@ -52,22 +52,29 @@ services:
     expose:
       - "8081"
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+      SCHEMA_REGISTRY_HOST_NAME: schema_registry
+      # zookeeper election is deprecated, use kafka instead
+      # https://docs.confluent.io/current/schema_registry/installation/config.html#kafkastore-bootstrap-servers
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:9092 
+      # Comma-separated list of listeners that listen for API requests over
+      # either HTTP or HTTPS. If a listener uses HTTPS, the appropriate SSL
+      # configuration parameters need to be set as well.
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081" 
+      DEBUG: "true"
     networks:
       - kafka
 
-  producer:
-    build: ./producer
-    depends_on:
-      - zookeeper
-      - broker
-      - schema-registry
-    environment: 
-      BROKER: 'broker:9092'
-      #SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-    networks:
-      - kafka
+#  producer:
+#    build: ./producer
+#    depends_on:
+#      - zookeeper
+#      - broker
+#      - schema_registry
+#    environment: 
+#      BROKER: 'broker:9092'
+#      #SCHEMA_REGISTRY_URL: 'http://schema_registry:8081'
+#    networks:
+#      - kafka
 
 networks:
   kafka:
