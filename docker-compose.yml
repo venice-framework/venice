@@ -50,10 +50,10 @@ services:
     networks:
       - kafka
 
-  schema_registry:
+  schema-registry:
     image: confluentinc/cp-schema-registry:5.4.1
-    hostname: schema_registry
-    container_name: schema_registry
+    hostname: schema-registry
+    container_name: schema-registry
     depends_on:
       - zookeeper
       - broker
@@ -61,9 +61,9 @@ services:
     expose:
       - "28081"
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema_registry
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
       # zookeeper election is deprecated, use kafka instead
-      # https://docs.confluent.io/current/schema_registry/installation/config.html#kafkastore-bootstrap-servers
+      # https://docs.confluent.io/current/schema-registry/installation/config.html#kafkastore-bootstrap-servers
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:29092 
       # Comma-separated list of listeners that listen for API requests over
       # either HTTP or HTTPS. If a listener uses HTTPS, the appropriate SSL
@@ -78,10 +78,10 @@ services:
 #    depends_on:
 #      - zookeeper
 #      - broker
-#      - schema_registry
+#      - schema-registry
 #    environment: 
 #      BROKER: "broker:9092"
-#      #SCHEMA_REGISTRY_URL: "http://schema_registry:8081"
+#      #SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
 #    networks:
 #      - kafka
 
