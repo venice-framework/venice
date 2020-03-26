@@ -55,7 +55,6 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
-      - zookeeper
       - broker
     # expose ports without publishing them to the host machine
     expose:
@@ -73,17 +72,16 @@ services:
     networks:
       - kafka
 
-#  producer:
-#    build: ./producer
-#    depends_on:
-#      - zookeeper
-#      - broker
-#      - schema-registry
-#    environment: 
-#      BROKER: "broker:9092"
-#      #SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#    networks:
-#      - kafka
+  producer:
+    build: ./producer
+    depends_on:
+      - broker
+      - schema-registry
+    environment: 
+      BROKER: "broker:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
+    networks:
+      - kafka
 
 networks:
   kafka:
