@@ -5,7 +5,7 @@ The schema url is http://schema-registry.confluent_kafka:28081
 
 For slightly prettier output, add the --silent flag, and pipe the output to jq.
 For example:
-curl --silent -X GET http://localhost:8081/schemas/ids/1 | jq .
+curl --silent -X GET http://schema-registry.confluent_kafka:28081/schemas/ids/1 | jq .
 
 You may have to run
 
