@@ -1,20 +1,21 @@
-import os
 from confluent_kafka import avro
 from confluent_kafka.avro import AvroProducer
+
+import os
 import requests
 import time
-
-for i in range(120):
-  print("I am sleeping for {} seconds".format(i))
-  time.sleep(1)
-# time.sleep(20)
-print("I am done sleeping")
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
 
-print(BROKER)
-print(SCHEMA_REGISTRY_URL)
+#print(BROKER)
+#print(SCHEMA_REGISTRY_URL)
+
+# sleep to give the schema-registry time to connect to kafka 
+for i in range(120):
+  print("I am sleeping for {} seconds".format(i))
+  time.sleep(1)
+print("I am done sleeping")
 
 r = requests.get(SCHEMA_REGISTRY_URL + '/subjects/')
 print("got my status code back! it's {}".format(r.status_code))
