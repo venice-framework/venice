@@ -14,7 +14,6 @@ services:
     networks:
       - kafka
     
-
   broker:
     image: confluentinc/cp-server:5.4.1
     hostname: broker
@@ -22,7 +21,6 @@ services:
     depends_on:
       - zookeeper
     # expose ports without publishing them to the host machine
-    # this is internal
     expose:
       - "29092"
     environment:
