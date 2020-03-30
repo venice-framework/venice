@@ -93,7 +93,7 @@ services:
       - kafka
 
   connector:
-    build: ./connector
+    image: confluentinc/cp-kafka-connect-base 
     hostname: connector
     container_name: connector
     depends_on:
@@ -127,8 +127,8 @@ services:
     image: influxdb:1.7-alpine
     hostname: influxdb 
     container_name: influxdb 
-    ports:
-      - "8086"
+    expose:
+      - "28086"
     networks:
       - kafka
 

@@ -18,6 +18,6 @@ CTRL+D to exit bash shell
 # Commit the changes to the container
 docker commit  -a "Nancy Trinh" -m "Installed influxdb connector" connect nantrinh/influxdb-connector 
 
-# Create connect directory
+# Create connector directory
 Create config file.
 Create Dockerfile.

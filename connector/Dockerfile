@@ -1,2 +1,2 @@
 FROM nantrinh/influxdb-connector 
-COPY influxdb-source-connector.properties .
+COPY influxdb-sink-connector.properties /usr/share/confluent-hub-components/confluentinc-kafka-connect-influxdb/etc/
