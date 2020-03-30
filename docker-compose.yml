@@ -93,11 +93,12 @@ services:
       - kafka
 
   connect:
-    build: ./connect
-    hostname: connect
-    container_name: connect
+    build: ./connector
+    hostname: connector
+    container_name: connector
     depends_on:
       - broker
+      - schema-registry
     # expose ports without publishing them to the host machine
     expose:
       - "28083"
@@ -122,7 +123,7 @@ services:
     networks:
       - kafka
 
-influxdb:
+  influxdb:
     image: influxdb:1.7-alpine
     hostname: influxdb 
     container_name: influxdb 
