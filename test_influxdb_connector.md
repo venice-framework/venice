@@ -1,3 +1,16 @@
+# Is the connector running?
+docker exec -it broker /bin/bash
+
+curl http://connector:28083/
+
+should return something like:
+
+{"version":"5.3.3-ccs","commit":"b645a14492f6a68c","kafka_cluster_id":"LSkaoqGjQtafv9YSuDQKyA"}
+
+# Which plugins are available?
+curl http://connector:28083/connector-plugins
+
+
 # Look inside connector to see if the config file is in the right place and contains the right info 
 docker exec -it connector /bin/bash
 cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-influxdb/etc/

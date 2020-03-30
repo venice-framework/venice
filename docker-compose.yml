@@ -11,8 +11,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 22181
       ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - kafka
     
   broker:
     image: confluentinc/cp-server:5.4.1
@@ -45,8 +43,6 @@ services:
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: "true"
       CONFLUENT_SUPPORT_CUSTOMER_ID: "anonymous"
-    networks:
-      - kafka
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.4.1
@@ -67,8 +63,6 @@ services:
       # configuration parameters need to be set as well.
       SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:28081"
       DEBUG: "true"
-    networks:
-      - kafka
 
   producer:
     build: ./producer
@@ -76,10 +70,8 @@ services:
       - broker
       - schema-registry
     environment: 
-      BROKER: "broker.confluent_kafka:29092"
-      SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
-    networks:
-      - kafka
+      BROKER: "broker:29092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
 
   consumer:
     build: ./consumer
@@ -87,10 +79,8 @@ services:
       - broker
       - schema-registry
     environment: 
-      BROKER: "broker.confluent_kafka:29092"
-      SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
-    networks:
-      - kafka
+      BROKER: "broker:29092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
 
   connector:
     image: confluentinc/cp-kafka-connect-base 
@@ -104,13 +94,13 @@ services:
       - "28083"
     environment:
       # https://docs.confluent.io/current/connect/references/allconfigs.html
-      CONNECT_BOOTSTRAP_SERVERS: "broker.confluent_kafka:29092"
+      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
       CONNECT_REST_PORT: 28083
       CONNECT_REST_ADVERTISED_HOST_NAME: "connect-1"
       CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry.confluent_kafka:28081"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
       CONNECT_GROUP_ID: 1
       CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
       CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
@@ -120,8 +110,6 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
-    networks:
-      - kafka
 
   influxdb:
     image: influxdb:1.7-alpine
@@ -129,11 +117,3 @@ services:
     container_name: influxdb 
     expose:
       - "28086"
-    networks:
-      - kafka
-
-
-networks:
-  kafka:
-    # bridge is the default
-    driver: bridge 
