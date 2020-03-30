@@ -19,7 +19,7 @@ c = AvroConsumer({
     'group.id': 'groupid',
     'schema.registry.url': SCHEMA_REGISTRY_URL})
 
-c.subscribe(['bus.locations'])
+c.subscribe(['bus_locations'])
 
 while True:
     try:

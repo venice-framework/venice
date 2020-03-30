@@ -5,11 +5,11 @@ import os
 import requests
 import time
 
+from admin_api import CustomAdmin
+
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
-
-#print(BROKER)
-#print(SCHEMA_REGISTRY_URL)
+TOPIC_NAME = 'bus_locations'
 
 # sleep to give the schema-registry time to connect to kafka 
 for i in range(120):
@@ -17,11 +17,10 @@ for i in range(120):
   time.sleep(1)
 print("I am done sleeping")
 
-r = requests.get(SCHEMA_REGISTRY_URL + '/subjects/')
-print("got my status code back! it's {}".format(r.status_code))
-while r.status_code != 200:
-    print("status code: {}. retrying...".format(r.status_code))
-    r = requests.get(SCHEMA_REGISTRY_URL + '/subjects/')
+# create a topic if it doesn't exist yet
+admin = CustomAdmin(BROKER)
+if not admin.topic_exists(TOPIC_NAME):
+  admin.create_topics([TOPIC_NAME])
 
 value_schema = avro.loads("""
     {
@@ -58,7 +57,7 @@ while True:
       "lat": lat,
       "lng": lng 
     }
-    avroProducer.produce(topic='bus.locations', value=value)
+    avroProducer.produce(topic=TOPIC_NAME, value=value)
     print("I just produced lat: {}, lng: {}".format(lat, lng))
     lat += 0.000001
     lng += 0.000001
@@ -66,6 +65,8 @@ while True:
   print("I have flushed")
   time.sleep(5)
 
+
+# ==============================================
 #record_schema_str = avro.loads("""
 #{
 #   "namespace": "septa.bus.location",
