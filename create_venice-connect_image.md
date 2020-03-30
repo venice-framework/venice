@@ -1,20 +1,23 @@
-use cp-kafka-connect instead of cp-kafka-connect-base if you want JDBC Source Connector, JDBC Sink Connector, Elasticsearch Sink Connector,
+Note: Use cp-kafka-connect instead of cp-kafka-connect-base if you want JDBC Source Connector, JDBC Sink Connector, Elasticsearch Sink Connector,
 and Amazon S3 Sink Connector bundled with the image
 https://hub.docker.com/r/confluentinc/cp-kafka-connect
 https://docs.confluent.io/current/connect/userguide.html#installing-kconnect-plugins
 
-# Run the base image
-docker run -it confluentinc/cp-kafka-connect-base:5.3.3 --name connect /bin/bash
+# Run the base image from docker-compose
+Put this in docker-compose file under the "connect" service.
+I think it's easier to run from docker-compose because the base image relies on communicating with the broker. The modified image will also depend on the schema-registry.
 
-# Install influxdb connector
+image: confluentinc/cp-kafka-connect-base:5.3.3
+
+# Open bash shell and install influxdb connector in the container
+docker exec -it connect /bin/bash
 confluent-hub install confluentinc/kafka-connect-influxdb:1.1.2
 2, y, y, y
+CTRL+D to exit bash shell
 
 # Commit the changes to the container
-docker commit 
+docker commit  -a "Nancy Trinh" -m "Installed influxdb connector" connect nantrinh/influxdb-connector 
 
 # Create connect directory
-## Create config file
-## Create dockerfile
-
-TODO: cleanup step: dynamically insert schema.registry.url based on an environment variable that you set in docker-compose.yml 
+Create config file.
+Create Dockerfile.

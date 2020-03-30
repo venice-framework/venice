@@ -92,7 +92,7 @@ services:
     networks:
       - kafka
 
-  connect:
+  connector:
     build: ./connector
     hostname: connector
     container_name: connector
