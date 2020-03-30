@@ -65,7 +65,7 @@ services:
       # Comma-separated list of listeners that listen for API requests over
       # either HTTP or HTTPS. If a listener uses HTTPS, the appropriate SSL
       # configuration parameters need to be set as well.
-      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:28081" 
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:28081"
       DEBUG: "true"
     networks:
       - kafka
@@ -93,11 +93,7 @@ services:
       - kafka
 
   connect:
-    # use cp-kafka-connect instead of cp-kafka-connect-base if you want JDBC Source Connector, JDBC Sink Connector, Elasticsearch Sink Connector,
-    # and Amazon S3 Sink Connector bundled with the image
-    # https://hub.docker.com/r/confluentinc/cp-kafka-connect
-    # https://docs.confluent.io/current/connect/userguide.html#installing-kconnect-plugins
-    image: confluentinc/cp-kafka-connect-base:5.3.3
+    build: ./connect
     hostname: connect
     container_name: connect
     depends_on:
@@ -123,6 +119,15 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
+    networks:
+      - kafka
+
+influxdb:
+    image: influxdb:1.7-alpine
+    hostname: influxdb 
+    container_name: influxdb 
+    ports:
+      - "8086"
     networks:
       - kafka
 
