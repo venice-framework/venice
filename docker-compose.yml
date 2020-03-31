@@ -179,3 +179,26 @@ services:
       - primary-ksqldb-server
     entrypoint: /bin/sh
     tty: true
+
+  postgres:
+    #   # *-----------------------------*
+    #   # To connect to the DB:
+    #
+
+    # docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
+
+    #   # *-----------------------------*
+
+    image: postgres
+    ports:
+      - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432
+    environment:
+      - POSTGRES_USER=venice_user
+      - POSTGRES_PASSWORD=venice
+      - POSTGRES_DB=buses
+      # I think there is a way to move these to a database.env file, but I couldn't get it working and so lef it here.
+    volumes:
+      - ./data/postgres:/docker-entrypoint-initdb.d # TODO: Make this a named volume so it ill reload upon restart.
+
+      # Currently this volume runs the SQL file in data/postgres on set up.
+    restart: unless-stopped
