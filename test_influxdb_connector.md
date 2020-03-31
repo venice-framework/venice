@@ -1,20 +1,30 @@
 # Is the connector running?
-docker exec -it broker /bin/bash
-
-curl http://connector:28083/
+## Checking from localhost
+curl http://localhost:8083
 
 should return something like:
 
 {"version":"5.3.3-ccs","commit":"b645a14492f6a68c","kafka_cluster_id":"LSkaoqGjQtafv9YSuDQKyA"}
 
 # Which plugins are available?
-curl http://connector:28083/connector-plugins
+curl http://localhost:8083/connector-plugins
 
+```
+[
+  {"class":"org.apache.kafka.connect.file.FileStreamSinkConnector","type":"sink","version":"5.4.1-ccs"},
+  {"class":"org.apache.kafka.connect.file.FileStreamSourceConnector","type":"source","version":"5.4.1-ccs"},
+  {"class":"org.apache.kafka.connect.mirror.MirrorCheckpointConnector","type":"source","version":"1"},
+  {"class":"org.apache.kafka.connect.mirror.MirrorHeartbeatConnector","type":"source","version":"1"},
+  {"class":"org.apache.kafka.connect.mirror.MirrorSourceConnector","type":"source","version":"1"}
+]
+```
+# Create influxdb-sink-connector.json file
+Example here: https://docs.confluent.io/current/connect/kafka-connect-influxdb/influx-db-sink-connector/index.html#rest-based-example
 
-# Look inside connector to see if the config file is in the right place and contains the right info 
-docker exec -it connector /bin/bash
-cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-influxdb/etc/
-cat influxdb-sink-connector.properties
+# Post the config to one of the kafka connect workers
+curl -X POST -d @influxdb-sink-connector.json http://localhost:8083/connectors -H "Content-Type: application/json"
+
+From cURL man pages: If you start the data with the letter @, the rest should be a file name to read the data from, or - if you want curl to read the data from stdin. Multiple files can also be specified.
 
 # Look inside influxdb to see if the table is being populated
 ```
