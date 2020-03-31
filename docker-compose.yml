@@ -5,11 +5,9 @@ services:
     image: confluentinc/cp-zookeeper:5.4.1
     hostname: zookeeper
     container_name: zookeeper
-    # expose ports without publishing them to the host machine
-    expose:
-      - "22181"
+    # ports 2181, 2888, and 3888 are exposed by default
     environment:
-      ZOOKEEPER_CLIENT_PORT: 22181
+      ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     
   broker:
@@ -18,28 +16,26 @@ services:
     container_name: broker
     depends_on:
       - zookeeper
-    # expose ports without publishing them to the host machine
-    expose:
-      - "29092"
+    # port 9092 is exposed by default
     environment:
       # parameters here:
       # https://kafka.apache.org/documentation/#configuration
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:22181"
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       # KAFKA_ADVERTISED_LISTENERS is a comma-separated list of listeners with their
       # host/IP and port. This is the metadata that’s passed back to clients.
       # https://www.confluent.io/blog/kafka-listeners-explained/
       # the use of PLAINTEXT is related to the security.inter.broker.protocol: 
       # https://docs.confluent.io/current/installation/configuration/broker-configs.html
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:22181
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:9092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: "true"
       CONFLUENT_SUPPORT_CUSTOMER_ID: "anonymous"
@@ -51,17 +47,16 @@ services:
     depends_on:
       - broker
     # expose ports without publishing them to the host machine
-    expose:
-      - "28081"
+    # port 8081 is exposed by default
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       # zookeeper election is deprecated, use kafka instead
       # https://docs.confluent.io/current/schema-registry/installation/config.html#kafkastore-bootstrap-servers
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:29092 
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:9092 
       # Comma-separated list of listeners that listen for API requests over
       # either HTTP or HTTPS. If a listener uses HTTPS, the appropriate SSL
       # configuration parameters need to be set as well.
-      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:28081"
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
       DEBUG: "true"
 
   producer:
@@ -70,8 +65,8 @@ services:
       - broker
       - schema-registry
     environment: 
-      BROKER: "broker:29092"
-      SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
+      BROKER: "broker:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
 
   consumer:
     build: ./consumer
@@ -79,8 +74,8 @@ services:
       - broker
       - schema-registry
     environment: 
-      BROKER: "broker:29092"
-      SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
+      BROKER: "broker:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
 
   connector:
     #image: confluentinc/cp-kafka-connect-base 
@@ -94,13 +89,13 @@ services:
       - "8083:8083"
     environment:
       # https://docs.confluent.io/current/connect/references/allconfigs.html
-      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
+      CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
       CONNECT_REST_PORT: 8083
       CONNECT_REST_ADVERTISED_HOST_NAME: "connector"
       CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:28081"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONNECT_GROUP_ID: 1
       CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
       CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
@@ -111,9 +106,18 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
 
+  influxdb-connector-initializer:
+    build: ./influxdb-connector-initializer
+    depends_on:
+      - broker
+      - schema-registry
+    environment:
+      CONNECTOR_URL: "http://connector:8083"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      INFLUX_DB_URL: "http://influxdb:8086" 
+
   influxdb:
     image: influxdb:1.7-alpine
     hostname: influxdb 
     container_name: influxdb 
-    expose:
-      - "28086"
+    # port 8086 is exposed by default

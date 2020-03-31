@@ -26,6 +26,24 @@ curl -X POST -d @influxdb-sink-connector.json http://localhost:8083/connectors -
 
 From cURL man pages: If you start the data with the letter @, the rest should be a file name to read the data from, or - if you want curl to read the data from stdin. Multiple files can also be specified.
 
+Response should like this:
+{
+  "name":"InfluxDBSinkConnector",
+  "config":{
+    "connector.class":"io.confluent.influxdb.InfluxDBSinkConnector",
+     "tasks.max":"1",
+     "topics":"bus_locations",
+     "influxdb.url":"http://influxdb:28086",
+     "influxdb.db":"influxTestDB",
+     "measurement.name.format":"${topic}",
+     "value.converter":"io.confluent.connect.avro.AvroConverter",
+     "value.converter.schema.registry.url":"http://schema-registry:28081",
+     "name":"InfluxDBSinkConnector"
+  },
+  "tasks":[],
+  "type":"sink"
+}
+
 # Look inside influxdb to see if the table is being populated
 ```
 docker exec -it influxdb /bin/bash
@@ -38,7 +56,7 @@ influx
 
 Output should look like:
 ```
-Connected to http://influxdb.confluent_kafka:8086 version 1.7.7
+Connected to http://influxdb:8086 version 1.7.7
 InfluxDB shell version: 1.7.7
 ```
 

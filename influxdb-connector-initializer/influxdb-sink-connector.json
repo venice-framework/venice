@@ -1,0 +1,13 @@
+{
+    "name": "InfluxDBSinkConnector-bus-locations",
+    "config": {
+        "connector.class": "io.confluent.influxdb.InfluxDBSinkConnector",
+        "tasks.max": "1",
+        "topics": "bus_locations",
+        "influxdb.url": "'$INFLUX_DB_URL'",
+        "influxdb.db": "influxTestDB",
+        "measurement.name.format": "${topic}",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "'$SCHEMA_REGISTRY_URL'"
+    }
+}
