@@ -190,8 +190,8 @@ services:
     #   # *-----------------------------*
 
     image: postgres
-    ports:
-      - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432
+    # ports:
+    #   - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432. Currently commented out and just using default which is 5432
     environment:
       - POSTGRES_USER=venice_user
       - POSTGRES_PASSWORD=venice
