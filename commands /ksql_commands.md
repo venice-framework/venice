@@ -34,10 +34,17 @@ A Kafka topic with the name 'bus_locations' already exists, with different parti
 SHOW STREAMS;
 ```
 
+## set offset for a stream back to the start
+
+```
+SET 'auto.offset.reset' = 'earliest';
+```
+
 ## Print the STREAM
 
 ```sql
 SELECT * FROM bus_locations_stream EMIT CHANGES;
+
 ```
 
 - you need to remember to do the EMIT CHANGES
@@ -49,10 +56,27 @@ SELECT * FROM bus_locations_stream EMIT CHANGES;
 DESCRIBE EXTENDED BUS_LOCATIONS;
 ```
 
+## Rekey a stream without a key
+
+````sql
+CREATE STREAM locations_with_lat_key
+    WITH (KAFKA_TOPIC='locations_keyed_by_lat') AS
+    SELECT *
+    FROM  BUS_LOCATIONS_STREAM
+    PARTITION BY lat;
+
+
+-- then to query
+
+SELECT * FROM locations_with_lat_key EMIT CHANGES;
+
+```
+
+
 ## More complex query
 
-SELECT ROWKEY, SUM(LAT) AS total_lat
-FROM bus_locations_stream
+SELECT ROWKEY, SUM(lng) AS total_lng
+FROM locations_with_lat_key
 GROUP BY ROWKEY
 EMIT CHANGES;
 
@@ -66,3 +90,4 @@ SET 'auto.offset.reset'='earliest';
 
 -- describes the relationship between a stream and a topic
 describe extended purchases_stream;
+````
