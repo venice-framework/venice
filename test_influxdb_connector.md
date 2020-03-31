@@ -6,6 +6,9 @@ should return something like:
 
 {"version":"5.3.3-ccs","commit":"b645a14492f6a68c","kafka_cluster_id":"LSkaoqGjQtafv9YSuDQKyA"}
 
+# What connectors are available?
+curl http://connector:8083/connectors
+
 # Which plugins are available?
 curl http://localhost:8083/connector-plugins
 
