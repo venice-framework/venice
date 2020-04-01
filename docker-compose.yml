@@ -10,10 +10,10 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  broker:
+  broker-1:
     image: confluentinc/cp-server:5.4.1
-    hostname: broker
-    container_name: broker
+    hostname: broker-1
+    container_name: broker-1
     depends_on:
       - zookeeper
     # port 9092 is exposed by default
@@ -27,44 +27,40 @@ services:
       # https://www.confluent.io/blog/kafka-listeners-explained/
       # the use of PLAINTEXT is related to the security.inter.broker.protocol:
       # https://docs.confluent.io/current/installation/configuration/broker-configs.html
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-
-  broker2:
-    image: confluentinc/cp-server:5.4.1
-    hostname: broker2
-    depends_on:
-      - zookeeper
-    ports:
-      - "9093:9093"
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
+  broker-2:
+    image: confluentinc/cp-server:5.4.1
+    hostname: broker-2
+    container_name: broker-2
+    depends_on:
+      - zookeeper
+    environment:
       KAFKA_BROKER_ID: 2
-
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-
-  broker3:
-    image: confluentinc/cp-server:5.4.1
-    hostname: broker3
-    depends_on:
-      - zookeeper
-    expose:
-      - "9094" # need to expose internally if we
-    # port 9092 is exposed by default
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker3:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  broker-3:
+    image: confluentinc/cp-server:5.4.1
+    hostname: broker-3
+    container_name: broker-3
+    depends_on:
+      - zookeeper
+    environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
   schema-registry:
@@ -72,37 +68,46 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
-      - broker
+      - broker-1
+      - broker-2
+      - broker-3
     # expose ports without publishing them to the host machine
     # port 8081 is exposed by default
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       # zookeeper election is deprecated, use kafka instead
       # https://docs.confluent.io/current/schema-registry/installation/config.html#kafkastore-bootstrap-servers
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:9092
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092
       # Comma-separated list of listeners that listen for API requests over
       # either HTTP or HTTPS. If a listener uses HTTPS, the appropriate SSL
       # configuration parameters need to be set as well.
       SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
       DEBUG: "true"
 
+
   producer:
     build: ./producer
+    container_name: producer
     depends_on:
-      - broker
+      - broker-1
+      - broker-2
+      - broker-3
       - schema-registry
     environment:
-      BROKER: "broker:9092"
+      BROKER: "broker-1:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       TOPIC_NAME: "bus_locations"
 
   consumer:
     build: ./consumer
+    container_name: consumer
     depends_on:
-      - broker
+      - broker-1
+      - broker-2
+      - broker-3
       - schema-registry
     environment:
-      BROKER: "broker:9092"
+      BROKER: "broker-1:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       TOPIC_NAME: "bus_locations"
 
@@ -111,13 +116,15 @@ services:
     hostname: primary-ksqldb-server
     container_name: primary-ksqldb-server
     depends_on:
-      - broker
+      - broker-1
+      - broker-2
+      - broker-3
       - schema-registry
     ports:
       - "8088:8088"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_BOOTSTRAP_SERVERS: broker:9092
+      KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
