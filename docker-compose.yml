@@ -134,29 +134,29 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  # postgres:
-  #  I got postgres to work, but couldn't get it to work with connect.
-  #   #   # *-----------------------------*
-  #   #   # To connect to the DB:
-  #   #
+  postgres:
+    #  I got postgres to work, but couldn't get it to work with connect.
+    #   # *-----------------------------*
+    #   # To connect to the DB:
+    #
 
-  #   # docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
+    # docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
 
-  #   #   # *-----------------------------*
+    #   # *-----------------------------*
 
-  #   image: postgres
-  #   # ports:
-  #   #   - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432. Currently commented out and just using default which is 5432
-  #   environment:
-  #     - POSTGRES_USER=venice_user
-  #     - POSTGRES_PASSWORD=venice
-  #     - POSTGRES_DB=buses
-  #     # I think there is a way to move these to a database.env file, but I couldn't get it working and so lef it here.
-  #   volumes:
-  #     - ./data/postgres:/docker-entrypoint-initdb.d # TODO: Make this a named volume so it ill reload upon restart.
+    image: postgres
+    # ports:
+    #   - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432. Currently commented out and just using default which is 5432
+    environment:
+      - POSTGRES_USER=venice_user
+      - POSTGRES_PASSWORD=venice
+      - POSTGRES_DB=buses
+      # I think there is a way to move these to a database.env file, but I couldn't get it working and so lef it here.
+    volumes:
+      - ./data/postgres:/docker-entrypoint-initdb.d # TODO: Make this a named volume so it ill reload upon restart.
 
-  #     # Currently this volume runs the SQL file in data/postgres on set up.
-  #   restart: unless-stopped
+      # Currently this volume runs the SQL file in data/postgres on set up.
+    restart: unless-stopped
 
   # Other systems
   mysql:
@@ -177,7 +177,7 @@ services:
       - ./data/mysql:/docker-entrypoint-initdb.d/ # this copies the data in data/mysql to the volume. Any sql scripts  in that folder will be run.
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect-base:5.4.1
+    image: confluentinc/cp-kafka-connect:latest
     container_name: kafka-connect
     depends_on:
       - broker
@@ -221,7 +221,6 @@ services:
         cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
         #
         curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.19.tar.gz | tar xz
-
         echo "Launching Kafka Connect worker"
         /etc/confluent/docker/run &
         #
