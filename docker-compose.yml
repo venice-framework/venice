@@ -106,7 +106,7 @@ services:
 #      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
 #      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
 #      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-#      CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
+#      #CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
 #
 #  influxdb-connector-initializer:
 #    build: ./influxdb-connector-initializer
@@ -114,7 +114,7 @@ services:
 #      - broker
 #      - schema-registry
 #    environment:
-#      CONNECTOR_URL: "http://connect:8083"
+#      CONNECT_URL: "http://connect:8083"
 #      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
 #      INFLUXDB_URL: "http://influxdb:8086" 
 #      INFLUXDB_DB: "septaDB"
