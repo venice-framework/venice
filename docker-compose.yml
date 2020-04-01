@@ -126,10 +126,27 @@ services:
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+      KSQL_CONNECT_BOOTSTRAP_SERVERS: "broker-1:9092"
+
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
       KSQL_KSQL_CONNECT_URL: kafka-connect:8083
+      KSQL_CONNECT_PLUGIN_PATH: "/usr/share/kafka/plugins"
+      KSQL_KSQL_CONNECT_WORKER_CONFIG: "/connect/connect.properties"
+      KSQL_CONNECT_GROUP_ID: "ksql-connect-cluster"
+      KSQL_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      KSQL_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      KSQL_CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      KSQL_CONNECT_CONFIG_STORAGE_TOPIC: "ksql-connect-configs"
+      KSQL_CONNECT_OFFSET_STORAGE_TOPIC: "ksql-connect-offsets"
+      KSQL_CONNECT_STATUS_STORAGE_TOPIC: "ksql-connect-statuses"
+      KSQL_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      KSQL_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      KSQL_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  ## This is a mess now. I was digging into two problems:
+  ## 1) why does SHOW CONNECTORS give an error - thats why tehre is so much ksql_connect stuff here now
+  ## 2) why does the key show up in the topic, but you can't create a STREAM. I think..... it has something to do with ksql using strings. Thats teh next thing to test
 
   ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
 

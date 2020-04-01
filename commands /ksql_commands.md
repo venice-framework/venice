@@ -16,8 +16,8 @@ PRINT bus_locations; -- this will follow new input
 ## Create stream
 
 ```sql
-CREATE STREAM bus_locations_stream
-WITH (KAFKA_TOPIC='bus_locations', PARTITIONS=3, VALUE_FORMAT='AVRO');
+CREATE STREAM bus_locations_stream2
+WITH (KAFKA_TOPIC='bus_locations', PARTITIONS=3, VALUE_FORMAT='AVRO')
 ```
 
 - reminder STREAM = TOPIC + SCHEMA.
