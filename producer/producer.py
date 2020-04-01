@@ -9,7 +9,7 @@ from admin_api import CustomAdmin
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
-TOPIC_NAME = 'bus_locations'
+TOPIC_NAME = os.environ['TOPIC_NAME'] 
 
 # sleep to give the schema-registry time to connect to kafka 
 for i in range(120):
@@ -24,14 +24,28 @@ if not admin.topic_exists(TOPIC_NAME):
 
 value_schema = avro.loads("""
     {
-        "namespace": "confluent.io.examples.serialization.avro",
-        "name": "User",
+        "namespace": "septa.bus.location",
+        "name": "value",
         "type": "record",
         "fields": [
             {"name": "lat", "type": "float", "doc": "latitude"},
             {"name": "lng", "type": "float", "doc": "longitude"}
         ]
     }
+""")
+
+key_schema = avro.loads("""
+{
+   "namespace": "septa.bus.location",
+   "name": "key",
+   "type": "record",
+   "fields" : [
+     {
+       "name" : "bus_id",
+       "type" : "int"
+     }
+   ]
+}
 """)
 
 def delivery_report(err, msg):
@@ -42,14 +56,19 @@ def delivery_report(err, msg):
     else:
         print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
-avroProducer = AvroProducer({
+avroProducer = AvroProducer(
+  {
     'bootstrap.servers': BROKER,
     'on_delivery': delivery_report,
     'schema.registry.url': SCHEMA_REGISTRY_URL 
-    }, default_value_schema=value_schema)
+  }, 
+  default_key_schema=key_schema,
+  default_value_schema=value_schema
+)
 
 lat = 40.043152
 lng = -75.18071
+key = {"bus_id": 1}
 
 while True:
   for i in range(5):
@@ -57,7 +76,7 @@ while True:
       "lat": lat,
       "lng": lng 
     }
-    avroProducer.produce(topic=TOPIC_NAME, value=value)
+    avroProducer.produce(topic=TOPIC_NAME, value=value, key=key)
     print("I just produced lat: {}, lng: {}".format(lat, lng))
     lat += 0.000001
     lng += 0.000001
@@ -119,7 +138,6 @@ while True:
 #  "direction": "NorthBound",
 #  "route": 47
 #}
-#key = {"trip": 44802985}
 #
 #value = {
 #  "lat": 40.043152,
