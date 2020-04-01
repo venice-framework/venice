@@ -189,12 +189,14 @@ services:
     image: confluentinc/cp-kafka-connect:latest
     container_name: kafka-connect
     depends_on:
-      - broker
+      - broker-1
+      - broker-2
+      - broker-3
       - schema-registry
     ports:
       - 8083:8083
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
+      CONNECT_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: kafka-connect

@@ -14,6 +14,20 @@
 
 }' -->
 
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+"name": "postgres_buses",
+"config": {
+"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+"connection.url": "jdbc:postgresql://postgres:5432/buses",
+"connection.user": "venice_user",
+"connection.password": "venice",
+"topic.prefix": "postgres-12-",
+"table.whitelist" : "demo.transactions",
+"mode":"bulk",
+"poll.interval.ms" : 3600000
+}
+}'
+
 curl -X PUT http://localhost:8083/connectors/sink-jdbc-mysql-01/config \
  -H "Content-Type: application/json" -d '{
 "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
