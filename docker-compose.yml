@@ -112,7 +112,8 @@ services:
       TOPIC_NAME: "bus_locations"
 
   primary-ksqldb-server:
-    image: confluentinc/ksqldb-server:latest
+  ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
+    image: confluentinc/ksqldb-server:0.8.1
     hostname: primary-ksqldb-server
     container_name: primary-ksqldb-server
     depends_on:
@@ -120,8 +121,9 @@ services:
       - broker-2
       - broker-3
       - schema-registry
-    ports:
-      - "8088:8088"
+    # no ports are exposed by default
+    expose:
+      - "8088"
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
@@ -129,17 +131,33 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
 
-  ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
-
-  # Access the cli by running:
-  # > docker-compose exec ksqldb-cli  ksql http://primary-ksqldb-server:8088
-  ksqldb-cli:
-    image: confluentinc/ksqldb-cli:latest
-    container_name: ksqldb-cli
-    depends_on:
-      - primary-ksqldb-server
-    entrypoint: /bin/sh
-    tty: true
+  # ksqldb command line client
+  # There are two options here:
+  # 
+  # (1)
+  # Give the ksqldb-server a few minutes to set itself up.
+  # Then, you can run a container for the ksqlDB command line client
+  # and connect to the server using the following command:
+  # docker run --rm --name ksqldb-cli -it --network=venice-python_default confluentinc/ksqldb-cli ksql http://primary-ksqldb-server:8088
+  # 
+  # This starts a container from the confluentinc/ksqldb-cli image and
+  # runs the ksql command with the URL of the ksqldb server as the argument
+  # 
+  # (2)
+  # Uncomment out this service and run the following command whenever you want to enter the container.
+  # docker-compose exec ksqldb-cli  ksql http://primary-ksqldb-server:8088
+  # ksqldb-cli:
+  #   image: confluentinc/ksqldb-cli:latest
+  #   container_name: ksqldb-cli
+  #   depends_on:
+  #     - primary-ksqldb-server
+  #   entrypoint: /bin/sh
+  #   tty: true
+  # 
+  # I think (2) may be preferable for beginners, but it is a waste of resources since it keeps running
+  # even if the user does not need to interact with the server.
+  # I propose that in our framework, since we are writing a wrapper around docker commands, we can write a
+  # wrapper around the command in (1) to bring up the command line (e.g., `venice ksql`) 
 
 #  connect:
 #    #image: confluentinc/cp-kafka-connect-base 
