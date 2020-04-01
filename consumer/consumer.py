@@ -7,6 +7,7 @@ import time
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
+TOPIC_NAME = os.environ['TOPIC_NAME'] 
 
 # sleep to give the schema-registry time to connect to kafka 
 for i in range(120):
@@ -19,7 +20,7 @@ c = AvroConsumer({
     'group.id': 'groupid',
     'schema.registry.url': SCHEMA_REGISTRY_URL})
 
-c.subscribe(['bus_locations'])
+c.subscribe([TOPIC_NAME])
 
 while True:
     try:
@@ -40,5 +41,6 @@ while True:
         continue
 
     print(msg.value())
+    print(msg.key())
 
 c.close()
