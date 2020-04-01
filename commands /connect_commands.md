@@ -5,7 +5,7 @@ curl kafka-connect:8083/connectors
 ## getting tasks for a connector
 
 replace postgres-sink-1 with your connector name
-curl kafka-connect:8083/connectors/postgres-sink-1/tasks | jq
+curl kafka-connect:8083/connectors/sink-jdbc-mysql-01/tasks | jq
 
 ## Restart connector task
 
