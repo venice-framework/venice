@@ -1,3 +1,3 @@
-create database buses;
+CREATE DATABASE buses;
 
-GRANT  CREATE, ALTER, DROP, SELECT, INSERT, UPDATE, DELETE ON buses.* TO venice_user;
+GRANT CREATE, ALTER, DROP, SELECT, INSERT, UPDATE, DELETE ON buses.* TO venice_user;
