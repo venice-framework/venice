@@ -9,8 +9,7 @@ from admin_api import CustomAdmin
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
-# TOPIC_NAME = os.environ['TOPIC_NAME']
-TOPIC_NAME = "locations"
+TOPIC_NAME = os.environ['TOPIC_NAME']
 
 
 # sleep to give the schema-registry time to connect to kafka
