@@ -1,5 +1,5 @@
 from confluent_kafka import avro
-from confluent_kafka.avro import AvroProducer
+from confluent_kafka.avro import AvroProducer, CachedSchemaRegistryClient
 
 import os
 import requests
@@ -12,7 +12,7 @@ SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
 TOPIC_NAME = os.environ['TOPIC_NAME']
 
 # sleep to give the schema-registry time to connect to kafka
-for i in range(120):
+for i in range(60):
   print("I am sleeping for {} seconds".format(i))
   time.sleep(1)
 print("I am done sleeping")
