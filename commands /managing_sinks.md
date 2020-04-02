@@ -71,9 +71,14 @@ Posting this here because there might be some that we want to tweak.
 ## Sink Requests
 
 - Anything in CAPS needs to be replaced.
+
   - SINK_NAME
   - DATABASE_NAME
   - TOPIC_NAME
+
+- Its critical that the TOPIC name is the actual topic that you want.
+  - it is case sensitive
+  - STREAMS don't always have the same stream name as the topic that backs them up
 
 ### Sinking a topic created from python
 

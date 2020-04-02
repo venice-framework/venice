@@ -23,9 +23,15 @@ PRINT bus_locations; -- this will follow new input
 
 ## Create stream
 
+- Stream names are case sensitive.
+- so you can have a "locations" stream and a "LOCATIONS" stream.
+- If you don't put the name in quotes then the stream will get created in ALL CAPS.
+- So you either have to remember that or put quotes around them.
+- If you are creating a STREAM that creates a topic e.g STREAM AS SELECT this is critical as the stream name and topic name may end up being different.
+
 ```sql
-CREATE STREAM locations_stream
-WITH (KAFKA_TOPIC='locations',
+CREATE STREAM test
+WITH (KAFKA_TOPIC='bus_locations',
       PARTITIONS=3,
       VALUE_FORMAT='AVRO',
       KEY = 'bus_id');
