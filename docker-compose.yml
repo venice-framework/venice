@@ -140,8 +140,7 @@ services:
       - broker-2
       - broker-3
       - schema-registry
-    #ports:
-    #  - "8083:8083"
+    # exposes ports 8083 and 9092 by default
     environment:
       # Required Kafka Connect Settings:
       # https://docs.confluent.io/current/installation/docker/config-reference.html#required-kafka-connect-settings
