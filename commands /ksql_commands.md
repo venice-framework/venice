@@ -16,8 +16,11 @@ PRINT bus_locations; -- this will follow new input
 ## Create stream
 
 ```sql
-CREATE STREAM bus_locations_stream2
-WITH (KAFKA_TOPIC='bus_locations', PARTITIONS=3, VALUE_FORMAT='AVRO')
+CREATE STREAM locations_stream
+WITH (KAFKA_TOPIC='locations',
+      PARTITIONS=3,
+      VALUE_FORMAT='AVRO',
+      KEY = 'bus_id');
 ```
 
 - reminder STREAM = TOPIC + SCHEMA.
@@ -30,7 +33,7 @@ A Kafka topic with the name 'bus_locations' already exists, with different parti
 
 ## Show STREAM
 
-```sql
+```sqls
 SHOW STREAMS;
 ```
 
@@ -44,6 +47,8 @@ SET 'auto.offset.reset' = 'earliest';
 
 ```sql
 SELECT * FROM bus_locations_stream EMIT CHANGES;
+SELECT * FROM locations_stream EMIT CHANGES;
+
 
 ```
 
@@ -53,8 +58,16 @@ SELECT * FROM bus_locations_stream EMIT CHANGES;
 ## describe relationship between stream and topic
 
 ```
-DESCRIBE EXTENDED BUS_LOCATIONS;
+DESCRIBE EXTENDED just_buses2;
 ```
+
+## Stream from select
+
+CREATE STREAM just_buses_stream
+WITH (VALUE_FORMAT='AVRO')
+AS SELECT bus_id FROM locations_stream
+PARTITION BY BUS_ID
+EMIT CHANGES;
 
 ## Rekey a stream without a key
 

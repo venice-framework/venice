@@ -1,5 +1,5 @@
 from confluent_kafka import avro
-from confluent_kafka.avro import AvroProducer, CachedSchemaRegistryClient
+from confluent_kafka.avro import AvroProducer
 
 import os
 import requests
@@ -9,10 +9,13 @@ from admin_api import CustomAdmin
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
-TOPIC_NAME = os.environ['TOPIC_NAME']
+# TOPIC_NAME = os.environ['TOPIC_NAME']
+TOPIC_NAME = "locations"
+
 
 # sleep to give the schema-registry time to connect to kafka
-for i in range(60):
+# Can we set this up so it waits for schema-registry and then launches. So if it crashes or needs to be restarted it can do that instantly.
+for i in range(5): # dropped this because its annoying to wait 2 minutes!
   print("I am sleeping for {} seconds".format(i))
   time.sleep(1)
 print("I am done sleeping")
@@ -28,6 +31,7 @@ value_schema = avro.loads("""
         "name": "value",
         "type": "record",
         "fields": [
+            {"name": "bus_id", "type": "string", "doc": "longitude"},
             {"name": "lat", "type": "float", "doc": "latitude"},
             {"name": "lng", "type": "float", "doc": "longitude"}
         ]
@@ -42,7 +46,7 @@ key_schema = avro.loads("""
    "fields" : [
      {
        "name" : "bus_id",
-       "type" : "int"
+       "type" : "string"
      }
    ]
 }
@@ -68,18 +72,25 @@ avroProducer = AvroProducer(
 
 lat = 40.043152
 lng = -75.18071
-key = {"bus_id": 1}
+bus_id = 1
 
 while True:
   for i in range(5):
     value = {
+      "bus_id": str(bus_id),
       "lat": lat,
       "lng": lng
     }
+    key = {
+      "bus_id": str(bus_id)
+    }
+
+
     avroProducer.produce(topic=TOPIC_NAME, value=value, key=key)
-    print("I just produced lat: {}, lng: {}".format(lat, lng))
+    print("I just produced bus:{} lat: {}, lng: {}".format(bus_id, lat, lng))
     lat += 0.000001
     lng += 0.000001
+    bus_id += 1
   avroProducer.flush()
   print("I have flushed")
   time.sleep(5)

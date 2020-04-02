@@ -31,16 +31,16 @@ print bus_locations;
 
 ```json
 curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
-"name": "postgres_buses",
+"name": "postgres_buses_with_upsert",
 "config": {
 "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
 "connection.url": "jdbc:postgresql://postgres:5432/buses",
 "connection.user": "venice_user",
 "connection.password": "venice",
-"topics": "bus_locations",
+"topics": "locations",
 "auto.create":"true",
 "auto.evolve":"true",
-"insert.mode": "insert"
+"insert.mode": "upsert"
 }
 }'
 ```
@@ -79,3 +79,26 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 }
 }'
 ```
+
+## Creating a sink from a KSQL STREAM as select
+
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+"name": "just_buses",
+"config": {
+"connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+"connection.url": "jdbc:postgresql://postgres:5432/buses",
+"connection.user": "venice_user",
+"connection.password": "venice",
+"key.converter": "org.apache.kafka.connect.storage.StringConverter",
+"topics": "JUST_BUSES_STREAM",
+"auto.create":"true",
+"auto.evolve":"true",
+"insert.mode": "insert"
+}
+}'
+
+## Delete
+
+curl -X DELETE http://localhost:8083/connectors/just_buses
+
+curl localhost:8083/connectors
