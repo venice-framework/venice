@@ -197,7 +197,7 @@ services:
     restart: unless-stopped
 
   postgres-connector-initializer:
-    # TODO: use heartbeat to avoid sleep
+    # TODO: use healthcheck to avoid sleep
     # TODO: use secrets
     build : ./postgres-connector-initializer
     container_name: postgres-connector-initializer
