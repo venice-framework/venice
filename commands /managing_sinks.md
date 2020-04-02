@@ -91,7 +91,7 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 "topics": "TOPIC_NAME",
 "auto.create":"true",
 "auto.evolve":"true",
-"insert.mode": "upsert"
+"insert.mode": "insert"
 }
 }'
 ```
@@ -134,6 +134,24 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 "connection.user": "venice_user",
 "connection.password": "venice",
 "topics": "TOPIC_NAME",
+"auto.create":"true",
+"auto.evolve":"true",
+"insert.mode": "insert"
+}
+}'
+```
+
+## Actual test sinks as of April 2nd
+
+```json
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+"name": "bus_locations",
+"config": {
+"connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+"connection.url": "jdbc:postgresql://postgres:5432/buses",
+"connection.user": "venice_user",
+"connection.password": "venice",
+"topics": "bus_locations",
 "auto.create":"true",
 "auto.evolve":"true",
 "insert.mode": "insert"

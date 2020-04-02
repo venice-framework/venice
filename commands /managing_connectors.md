@@ -13,5 +13,6 @@ curl localhost:8083/connectors
 ### Delete a connector
 
 curl -X DELETE http://localhost:8083/connectors/CONNECTOR_NAME
+curl -X DELETE http://localhost:8083/connectors/bus_locations
 
 ## TODO - Combining with Melissa's notes from connectors course
