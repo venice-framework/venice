@@ -11,7 +11,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   broker-1:
-    image: confluentinc/cp-server:5.4.1
+    image: confluentinc/cp-kafka:5.4.1
     hostname: broker-1
     container_name: broker-1
     depends_on:
@@ -34,7 +34,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
   broker-2:
-    image: confluentinc/cp-server:5.4.1
+    image: confluentinc/cp-kafka:5.4.1
     hostname: broker-2
     container_name: broker-2
     depends_on:
@@ -49,7 +49,7 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
   broker-3:
-    image: confluentinc/cp-server:5.4.1
+    image: confluentinc/cp-kafka:5.4.1
     hostname: broker-3
     container_name: broker-3
     depends_on:
@@ -111,11 +111,11 @@ services:
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       TOPIC_NAME: "bus_locations"
 
-  primary-ksqldb-server:
+  ksql-server:
   ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
-    image: confluentinc/ksqldb-server:0.8.1
-    hostname: primary-ksqldb-server
-    container_name: primary-ksqldb-server
+    image: confluentinc/cp-ksql-server:5.4.1
+    hostname: ksql-server
+    container_name: ksql-server
     depends_on:
       - broker-1
       - broker-2
@@ -131,6 +131,35 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
 
+  #kafka-connect:
+  #  image: confluentinc/cp-kafka-connect:5.4.1 
+  #  hostname: kafka-connect
+  #  container_name: kafka-connect
+  #  depends_on:
+  #    - broker
+  #    - schema-registry
+  #  ports:
+  #    - "8083:8083"
+  #  environment:
+  #    # https://docs.confluent.io/current/connect/references/allconfigs.html
+  #    CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
+  #    CONNECT_REST_PORT: 8083
+  #    CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
+  #    CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+  #    CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+  #    CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #    CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #    CONNECT_GROUP_ID: 1
+  #    CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
+  #    CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
+  #    CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
+  #    # replication should always be at least 3 for a production system
+  #    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+  #    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+  #    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  #    #CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
+
+
   # ksqldb command line client
   # There are two options here:
   # 
@@ -138,10 +167,11 @@ services:
   # Give the ksqldb-server a few minutes to set itself up.
   # Then, you can run a container for the ksqlDB command line client
   # and connect to the server using the following command:
-  # docker run --rm --name ksqldb-cli -it --network=venice-python_default confluentinc/ksqldb-cli ksql http://primary-ksqldb-server:8088
+  # docker run --rm --name ksql-cli -it --network=venice-python_default confluentinc/cp-ksql-cli:5.4.1 http://ksql-server:8088
   # 
-  # This starts a container from the confluentinc/ksqldb-cli image and
-  # runs the ksql command with the URL of the ksqldb server as the argument
+  # This starts a container from the confluentinc/cp-ksql-cli image.
+  # The entrypoint for that image is `ksql`. You can pass in the
+  # address of the server as the argument when starting a container.
   # 
   # (2)
   # Uncomment out this service and run the following command whenever you want to enter the container.
@@ -159,34 +189,6 @@ services:
   # I propose that in our framework, since we are writing a wrapper around docker commands, we can write a
   # wrapper around the command in (1) to bring up the command line (e.g., `venice ksql`) 
 
-#  connect:
-#    #image: confluentinc/cp-kafka-connect-base 
-#    image: nantrinh/influxdb-connector
-#    hostname: connect
-#    container_name: connect
-#    depends_on:
-#      - broker
-#      - schema-registry
-#    ports:
-#      - "8083:8083"
-#    environment:
-#      # https://docs.confluent.io/current/connect/references/allconfigs.html
-#      CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
-#      CONNECT_REST_PORT: 8083
-#      CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
-#      CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-#      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-#      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#      CONNECT_GROUP_ID: 1
-#      CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
-#      CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
-#      CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
-#      # replication should always be at least 3 for a production system
-#      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-#      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-#      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-#      #CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
 #
 #  influxdb-connector-initializer:
 #    build: ./influxdb-connector-initializer
@@ -205,3 +207,6 @@ services:
 #    hostname: influxdb 
 #    container_name: influxdb 
 #    # port 8086 is exposed by default
+
+
+# licensing info for images: https://docs.confluent.io/current/installation/docker/image-reference.html
