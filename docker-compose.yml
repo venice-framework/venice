@@ -131,35 +131,86 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
 
-  #kafka-connect:
-  #  image: confluentinc/cp-kafka-connect:5.4.1 
-  #  hostname: kafka-connect
-  #  container_name: kafka-connect
-  #  depends_on:
-  #    - broker
-  #    - schema-registry
-  #  ports:
-  #    - "8083:8083"
-  #  environment:
-  #    # https://docs.confluent.io/current/connect/references/allconfigs.html
-  #    CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
-  #    CONNECT_REST_PORT: 8083
-  #    CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
-  #    CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-  #    CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-  #    CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-  #    CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-  #    CONNECT_GROUP_ID: 1
-  #    CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
-  #    CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
-  #    CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
-  #    # replication should always be at least 3 for a production system
-  #    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-  #    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-  #    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-  #    #CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:5.4.1 
+    hostname: kafka-connect
+    container_name: kafka-connect
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+      - schema-registry
+    #ports:
+    #  - "8083:8083"
+    environment:
+      # Required Kafka Connect Settings:
+      # https://docs.confluent.io/current/installation/docker/config-reference.html#required-kafka-connect-settings
+      #
+      # All Settings:
+      # https://docs.confluent.io/current/connect/references/allconfigs.html
+      #
+      ###### REQUIRED SETTINGS ######
+      CONNECT_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+      CONNECT_GROUP_ID: 1
+      # The values for these three storage topics must be the same for all
+      # workers with the same group.id
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
+      # These control the format of the data that will be written to Kafka for
+      # source connectors or read from Kafka for sink connectors 
+      CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      # Converter class for internal values that implements the Converter interface
+      # I'm not sure what these do, actually, but they're required.
+      # These settings were used in
+      # https://github.com/confluentinc/demo-scene/blob/master/sonos/docker-compose.yml
+      # Maybe David got them from elsewhere
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      ###### END REQUIRED SETTINGS ######
+      # This is the default port 
+      CONNECT_REST_PORT: 8083
+      # These were not listed in the all settings page, but used in the demo above and tutorials
+      # https://docs.confluent.io/5.0.0/installation/docker/docs/installation/connect-avro-jdbc.html#starting-up-confluent-platform-and-kafka-connect
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      # These should always be at least 3 for a production system
+      # The defaults are 3
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+      # This was in the demo repo from above but not in the all settings page
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO" 
 
+  postgres:
+    # https://hub.docker.com/_/postgres
+    # docker exec -it postgres psql --username=venice_user --dbname=buses
+    build: ./postgres
+    container_name: postgres
+    # exposes port 5432 by default
+    environment:
+      # I think there is a way to move these to a database.env file, but I couldn't get it working and so left it here.
+      - POSTGRES_USER=venice_user
+      - POSTGRES_PASSWORD=venice
+      - POSTGRES_DB=buses
+    restart: unless-stopped
 
+  postgres-connector-initializer:
+    # TODO: use heartbeat to avoid sleep
+    # TODO: use secrets
+    build : ./postgres-connector-initializer
+    container_name: postgres-connector-initializer
+    environment:
+      TOPIC_NAME: "bus_locations"
+      CONNECT_URL: "http://kafka-connect:8083"
+      POSTGRES_HOST: "postgres"
+      POSTGRES_PORT: 5432 
+      POSTGRES_USER: "venice_user"
+      POSTGRES_PASSWORD: "venice"
+      POSTGRES_DB: "buses" 
+    
   # ksqldb command line client
   # There are two options here:
   # 
