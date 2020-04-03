@@ -7,30 +7,48 @@ import time
 
 from admin_api import CustomAdmin
 
+"""
+This is an example with fake data intended to demonstrate basic
+functionality of the pipeline.
+
+The context is a bus updating its location in physical space as
+it moves.
+
+The key is bus_id and the values are lat and lng.
+
+Every event represents a location change.
+The latitude and longitude are changes by a constant value
+with every event.
+"""
+
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
 TOPIC_NAME = os.environ['TOPIC_NAME']
 
+def delivery_report(err, msg):
+    """
+    Called once for each message produced to indicate delivery result.
+    Triggered by poll() or flush().
+    """
+    if err is not None:
+        print('Message delivery failed: {}'.format(err))
+    else:
+        print('Message delivered to {} [{}]'.
+        format(msg.topic(), msg.partition()))
 
-# sleep to give the schema-registry time to connect to kafka
-# Can we set this up so it waits for schema-registry and then launches. So if it crashes or needs to be restarted it can do that instantly.
-for i in range(5): # dropped this because its annoying to wait 2 minutes!
-  print("I am sleeping for {} seconds".format(i))
-  time.sleep(1)
-print("I am done sleeping")
 
-# create a topic if it doesn't exist yet
+# Create a topic if it doesn't exist yet
 admin = CustomAdmin(BROKER)
 if not admin.topic_exists(TOPIC_NAME):
   admin.create_topics([TOPIC_NAME])
 
+# Define schemas
 value_schema = avro.loads("""
     {
         "namespace": "septa.bus.location",
         "name": "value",
         "type": "record",
         "fields": [
-            {"name": "bus_id", "type": "string", "doc": "longitude"},
             {"name": "lat", "type": "float", "doc": "latitude"},
             {"name": "lng", "type": "float", "doc": "longitude"}
         ]
@@ -45,20 +63,13 @@ key_schema = avro.loads("""
    "fields" : [
      {
        "name" : "bus_id",
-       "type" : "string"
+       "type" : "int"
      }
    ]
 }
 """)
 
-def delivery_report(err, msg):
-    """ Called once for each message produced to indicate delivery result.
-        Triggered by poll() or flush(). """
-    if err is not None:
-        print('Message delivery failed: {}'.format(err))
-    else:
-        print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
-
+# Initialize producer
 avroProducer = AvroProducer(
   {
     'bootstrap.servers': BROKER,
@@ -69,87 +80,22 @@ avroProducer = AvroProducer(
   default_value_schema=value_schema
 )
 
+# Initialize key and values
+key = {"bus_id": 1}
 lat = 40.043152
 lng = -75.18071
-bus_id = 1
 
+# Produce events simulating bus movements, forever
 while True:
   for i in range(5):
     value = {
-      "bus_id": str(bus_id),
       "lat": lat,
-      "lng": lng
+      "lng": lng 
     }
-    key = {
-      "bus_id": str(bus_id)
-    }
-
-
     avroProducer.produce(topic=TOPIC_NAME, value=value, key=key)
     print("I just produced bus:{} lat: {}, lng: {}".format(bus_id, lat, lng))
     lat += 0.000001
     lng += 0.000001
-    bus_id += 1
   avroProducer.flush()
   print("I have flushed")
   time.sleep(5)
-
-
-# ==============================================
-#record_schema_str = avro.loads("""
-#{
-#   "namespace": "septa.bus.location",
-#   "name": "Location",
-#   "type": "record",
-#   "fields" : [
-#     {
-#       "name" : "lat",
-#       "type" : "float",
-#       "doc" : "latitude"
-#     },
-#     {
-#       "name" : "lng",
-#       "type" : "float",
-#       "doc" : "longitude"
-#     },
-#     {
-#       "name" : "direction",
-#       "type" : "string",
-#       "doc" : "the direction the bus is traveling",
-#     },
-#     {
-#       "name" : "route",
-#       "type" : "integer"
-#       "doc" : "the bus route"
-#     }
-#   ]
-#}
-#""")
-
-#key_schema_str = """
-#{
-#   "namespace": "septa.bus.location",
-#   "name": "key",
-#   "type": "record",
-#   "fields" : [
-#     {
-#       "name" : "trip",
-#       "type" : "integer"
-#     }
-#   ]
-#}
-#"""
-#
-#
-#value_schema = avro.loads(value_schema_str)
-#value = {
-#  "lat": 40.043152,
-#  "lng": -75.18071,
-#  "direction": "NorthBound",
-#  "route": 47
-#}
-#
-#value = {
-#  "lat": 40.043152,
-#  "lng": -75.18071
-#}
