@@ -46,10 +46,9 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
 ```
 
 - connect to the database
-  postgres
 
-```
-docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
+`docker exec -it postgres psql --username=venice_user --dbname=buses`
+
 
 then when connected
 \dt     -> this will show you if table is created

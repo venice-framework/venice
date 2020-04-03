@@ -96,7 +96,7 @@ services:
     environment:
       BROKER: "broker-1:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      TOPIC_NAME: "bus_locations"
+      TOPIC_NAME: "$TOPIC_NAME"
 
   consumer:
     build: ./consumer
@@ -109,7 +109,7 @@ services:
     environment:
       BROKER: "broker-1:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      TOPIC_NAME: "bus_locations"
+      TOPIC_NAME: "$TOPIC_NAME"
 
   ksql-server:
   ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
@@ -123,7 +123,7 @@ services:
       - schema-registry
     # no ports are exposed by default
     expose:
-      - "8088"
+      - 8088
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
@@ -181,7 +181,43 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
       # This was in the demo repo from above but not in the all settings page
-      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO" 
+      #CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO" 
+    # 
+
+  connector-init:
+    # You could put these commands in kafka-connect instead, but it may be harder to debug
+    # With these commands in a separate container, you can follow the logs for this container
+    # and the output would not be cluttered with that of kafka-connect's
+    image: alpine:3.11
+    container_name: connector-init
+    command:
+      - sh 
+      - -c
+      - |
+        apk add curl
+        echo "Waiting for kafka-connect to start listening"
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
+          sleep 5 
+        done
+        echo "kafka-connect is ready"
+        nc -vz kafka-connect 8083
+        echo -e "\n--\n+> Creating postgres sink"
+        echo \
+        "{
+          \"name\" : \"postgres_buses_upsert_$TOPIC_NAME\",
+          \"config\" : {
+            \"connector.class\" : \"io.confluent.connect.jdbc.JdbcSinkConnector\",
+             \"connection.url\": \"jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB\",
+             \"connection.user\": \"$POSTGRES_USER\",
+             \"connection.password\": \"$POSTGRES_PASSWORD\",
+             \"topics\": \"$TOPIC_NAME\",
+             \"auto.create\":\"true\",
+             \"auto.evolve\":\"true\",
+             \"insert.mode\": \"upsert\",
+             \"pk.mode\": \"record_key\"
+          }
+        }" | curl -s -X POST -d @- http://kafka-connect:8083/connectors -H "Content-Type: application/json" -w "\n"
 
   postgres:
     # https://hub.docker.com/_/postgres
@@ -189,27 +225,14 @@ services:
     build: ./postgres
     container_name: postgres
     # exposes port 5432 by default
+    expose:
+      - $POSTGRES_PORT 
     environment:
-      # I think there is a way to move these to a database.env file, but I couldn't get it working and so left it here.
-      - POSTGRES_USER=venice_user
-      - POSTGRES_PASSWORD=venice
-      - POSTGRES_DB=buses
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
     restart: unless-stopped
 
-  postgres-connector-initializer:
-    # TODO: use healthcheck to avoid sleep
-    # TODO: use secrets
-    build : ./postgres-connector-initializer
-    container_name: postgres-connector-initializer
-    environment:
-      TOPIC_NAME: "bus_locations"
-      CONNECT_URL: "http://kafka-connect:8083"
-      POSTGRES_HOST: "postgres"
-      POSTGRES_PORT: 5432 
-      POSTGRES_USER: "venice_user"
-      POSTGRES_PASSWORD: "venice"
-      POSTGRES_DB: "buses" 
-    
   # ksqldb command line client
   # There are two options here:
   # 
