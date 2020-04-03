@@ -9,9 +9,9 @@ from admin_api import CustomAdmin
 
 BROKER = os.environ['BROKER']
 SCHEMA_REGISTRY_URL = os.environ['SCHEMA_REGISTRY_URL']
-TOPIC_NAME = os.environ['TOPIC_NAME'] 
+TOPIC_NAME = os.environ['TOPIC_NAME']
 
-# sleep to give the schema-registry time to connect to kafka 
+# sleep to give the schema-registry time to connect to kafka
 for i in range(120):
   print("I am sleeping for {} seconds".format(i))
   time.sleep(1)
@@ -60,8 +60,8 @@ avroProducer = AvroProducer(
   {
     'bootstrap.servers': BROKER,
     'on_delivery': delivery_report,
-    'schema.registry.url': SCHEMA_REGISTRY_URL 
-  }, 
+    'schema.registry.url': SCHEMA_REGISTRY_URL
+  },
   default_key_schema=key_schema,
   default_value_schema=value_schema
 )
@@ -74,7 +74,7 @@ while True:
   for i in range(5):
     value = {
       "lat": lat,
-      "lng": lng 
+      "lng": lng
     }
     avroProducer.produce(topic=TOPIC_NAME, value=value, key=key)
     print("I just produced lat: {}, lng: {}".format(lat, lng))
