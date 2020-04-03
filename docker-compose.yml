@@ -95,6 +95,9 @@ services:
       - schema-registry
     environment:
       BROKER: "broker-1:9092"
+      SCHEMA_REGISTRY_HOST: "schema-registry"
+      SCHEMA_REGISTRY_PORT: 8081
+      # this is redundant but convenient
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       TOPIC_NAME: "$TOPIC_NAME"
 
