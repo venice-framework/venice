@@ -54,6 +54,8 @@ services:
     container_name: broker-3
     depends_on:
       - zookeeper
+    expose:
+      - "9094" # I tested in broker2 using ports and using expose here.
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
@@ -83,7 +85,6 @@ services:
       # configuration parameters need to be set as well.
       SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
       DEBUG: "true"
-
 
   producer:
     build: ./producer
@@ -125,9 +126,27 @@ services:
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+      KSQL_CONNECT_BOOTSTRAP_SERVERS: "broker-1:9092"
+
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: kafka-connect:8083
+      KSQL_CONNECT_PLUGIN_PATH: "/usr/share/kafka/plugins"
+      KSQL_KSQL_CONNECT_WORKER_CONFIG: "/connect/connect.properties"
+      KSQL_CONNECT_GROUP_ID: "ksql-connect-cluster"
+      KSQL_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      KSQL_CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      KSQL_CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      KSQL_CONNECT_CONFIG_STORAGE_TOPIC: "ksql-connect-configs"
+      KSQL_CONNECT_OFFSET_STORAGE_TOPIC: "ksql-connect-offsets"
+      KSQL_CONNECT_STATUS_STORAGE_TOPIC: "ksql-connect-statuses"
+      KSQL_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      KSQL_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      KSQL_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+  ## This is a mess now. I was digging into two problems:
+  ## 1) why does SHOW CONNECTORS give an error - thats why tehre is so much ksql_connect stuff here now
+  ## 2) why does the key show up in the topic, but you can't create a STREAM. I think..... it has something to do with ksql using strings. Thats teh next thing to test
 
   ## In final version you might want to have a second ksqlserver running  https://github.com/confluentinc/ksql/blob/master/docker-compose.yml see that link for example
 
@@ -141,49 +160,96 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-#  connect:
-#    #image: confluentinc/cp-kafka-connect-base 
-#    image: nantrinh/influxdb-connector
-#    hostname: connect
-#    container_name: connect
-#    depends_on:
-#      - broker
-#      - schema-registry
-#    ports:
-#      - "8083:8083"
-#    environment:
-#      # https://docs.confluent.io/current/connect/references/allconfigs.html
-#      CONNECT_BOOTSTRAP_SERVERS: "broker:9092"
-#      CONNECT_REST_PORT: 8083
-#      CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
-#      CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-#      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
-#      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#      CONNECT_GROUP_ID: 1
-#      CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
-#      CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
-#      CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
-#      # replication should always be at least 3 for a production system
-#      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-#      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-#      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-#      #CONNECT_LOG4J_ROOT_LOGLEVEL: "debug" 
-#
-#  influxdb-connector-initializer:
-#    build: ./influxdb-connector-initializer
-#    depends_on:
-#      - broker
-#      - schema-registry
-#    environment:
-#      CONNECT_URL: "http://connect:8083"
-#      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-#      INFLUXDB_URL: "http://influxdb:8086" 
-#      INFLUXDB_DB: "septaDB"
-#      TOPIC_NAME: "bus_locations"
-#
-#  influxdb:
-#    image: influxdb:1.7-alpine
-#    hostname: influxdb 
-#    container_name: influxdb 
-#    # port 8086 is exposed by default
+  postgres:
+    #  I got postgres to work, but couldn't get it to work with connect.
+    #   # *-----------------------------*
+    #   # To connect to the DB:
+    #
+
+    # docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
+
+    #   # *-----------------------------*
+
+    image: postgres
+    # ports:
+    #   - 54320:5432 # Exposing different port to the host because I've got pg installed locally using port 5432. Currently commented out and just using default which is 5432
+    environment:
+      - POSTGRES_USER=venice_user
+      - POSTGRES_PASSWORD=venice
+      - POSTGRES_DB=buses
+      # I think there is a way to move these to a database.env file, but I couldn't get it working and so lef it here.
+    volumes:
+      - ./data/postgres:/docker-entrypoint-initdb.d # TODO: Make this a named volume so it ill reload upon restart.
+
+      # Currently this volume runs the SQL file in data/postgres on set up.
+    restart: unless-stopped
+
+  # Other systems
+  mysql:
+    # *-----------------------------*
+    # To connect to the DB:
+    #   docker exec -it mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
+    # *-----------------------------*
+    image: mysql:8.0
+    container_name: mysql
+    # ports:
+    #   - 3306:3306
+    # should be port 3306 that is exposed
+    environment:
+      - MYSQL_ROOT_PASSWORD=Admin123
+      - MYSQL_USER=venice_user
+      - MYSQL_PASSWORD=venice
+    volumes:
+      - ./data/mysql:/docker-entrypoint-initdb.d/ # this copies the data in data/mysql to the volume. Any sql scripts  in that folder will be run.
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: kafka-connect
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+      - schema-registry
+    ports:
+      - 8083:8083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-status
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components/,/connectors/" ## this is the filepath for installing new plugins. Its hardcoded below for some reason.
+
+    volumes:
+      - $PWD/connectors:/connectors
+      - $PWD/data/flatfiles:/data
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    # command:
+    #   - bash
+    #   - -c
+    #   - |
+    #     echo "Installing connector plugins"
+    #     confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:5.4.1
+    #     confluent-hub install --no-prompt jcustenborder/kafka-connect-spooldir:2.0.43
+    #     #
+    #     echo "Downloading JDBC driver"
+    #     cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
+    #     #
+    #     curl https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.19.tar.gz | tar xz
+    #     echo "Launching Kafka Connect worker"
+    #     /etc/confluent/docker/run &
+    #     #
+    #     sleep infinity
