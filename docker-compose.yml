@@ -102,7 +102,7 @@ services:
       TOPIC_NAME: "$TOPIC_NAME"
 
   consumer:
-    build: ./consumer
+    image: veniceframework/python-consumer
     container_name: consumer
     depends_on:
       - broker-1
