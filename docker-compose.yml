@@ -86,7 +86,7 @@ services:
 
 
   producer:
-    build: ./producer
+    image: veniceframework/python-producer-test
     container_name: producer
     depends_on:
       - broker-1
