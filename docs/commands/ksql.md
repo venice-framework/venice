@@ -1,7 +1,7 @@
 ## Connect to the ksqlCLI with our current docker set up
 
 ```
-docker-compose exec ksqldb-cli ksql http://primary-ksqldb-server:8088
+docker run --rm --name ksql-cli -it --network=venice-python_default confluentinc/cp-ksql-cli:5.4.1 http://ksql-server:8088
 ```
 
 ## Link to documentation
