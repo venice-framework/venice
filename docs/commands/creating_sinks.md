@@ -21,7 +21,7 @@ print topic_name;
   - to connect to our existing postgres set up you would run:
 
 ```
-docker exec -it venice-python_postgres_1 psql --username=venice_user --dbname=buses
+docker exec -it postgres psql --username=venice_user --dbname=buses
 ```
 
 - then when connected you can check with these commands:
