@@ -205,6 +205,8 @@ services:
         done
         echo "kafka-connect is ready"
         nc -vz kafka-connect 8083
+        echo "Sleeping for 2 mins (TODO: https://github.com/venice-framework/venice-python/issues/12)"
+        sleep 2m
         echo -e "\n--\n+> Creating postgres sink"
         echo \
         "{
