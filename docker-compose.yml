@@ -66,8 +66,6 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES 
       KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS 
-      # KAFKA_LOG_DIRS: ./data/broker-2/logs
-      # KAFKA_LOG_DIR: ./data/broker-2/logs
 
     networks:
       - venice
