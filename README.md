@@ -115,7 +115,8 @@ Save and close the file.
 
 `venice status` or `venice -st`
 
-## To follow the logs of one or more components (press space bar to select before pressing enter/return)
+## To follow the logs of one or more components 
+press space bar to select before pressing enter/return
 
 `venice logs`
 ![venice logs demo](link to venice_logs_demo.gif)
