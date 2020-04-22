@@ -1,0 +1,3 @@
+CREATE DATABASE my_database;
+
+GRANT CREATE, ALTER, DROP, SELECT, INSERT, UPDATE, DELETE ON my_database.* TO venice_user;

@@ -9,11 +9,20 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+    volumes:
+      - ./data/zookeper/data:/var/lib/zookeeper/data
+      - ./data/zookeper/log:/var/lib/zookeeper/log
+      - /var/log/zookeeper:/var/log/zookeeper
+    networks:
+      - venice
 
   broker-1:
     image: confluentinc/cp-kafka:5.4.1
     hostname: broker-1
     container_name: broker-1
+    restart: unless-stopped
+
     depends_on:
       - zookeeper
     # port 9092 is exposed by default
@@ -32,11 +41,17 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - ./data/broker-1/data:/var/lib/kafka/data
+    networks:
+      - venice
 
   broker-2:
     image: confluentinc/cp-kafka:5.4.1
     hostname: broker-2
     container_name: broker-2
+    restart: unless-stopped
+
     depends_on:
       - zookeeper
     environment:
@@ -47,11 +62,19 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # KAFKA_LOG_DIRS: ./data/broker-2/logs
+      # KAFKA_LOG_DIR: ./data/broker-2/logs
+
+    networks:
+      - venice
+    volumes:
+      - ./data/broker-2/data:/var/lib/kafka/data
 
   broker-3:
     image: confluentinc/cp-kafka:5.4.1
     hostname: broker-3
     container_name: broker-3
+    restart: unless-stopped
     depends_on:
       - zookeeper
     environment:
@@ -62,6 +85,10 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - venice
+    volumes:
+      - ./data/broker-3/data:/var/lib/kafka/data
 
   schema-registry:
     image: confluentinc/cp-schema-registry:5.4.1
@@ -71,8 +98,10 @@ services:
       - broker-1
       - broker-2
       - broker-3
-    # expose ports without publishing them to the host machine
     # port 8081 is exposed by default
+    # publish port to work with venice CLI
+    ports:
+      - 8081:8081
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       # zookeeper election is deprecated, use kafka instead
@@ -83,10 +112,11 @@ services:
       # configuration parameters need to be set as well.
       SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
       DEBUG: "true"
-
+    networks:
+      - venice
 
   producer:
-    image: veniceframework/python-producer-test
+    image: veniceframework/python-producer-test-key-string
     container_name: producer
     depends_on:
       - broker-1
@@ -97,22 +127,10 @@ services:
       BROKER: "broker-1:9092"
       SCHEMA_REGISTRY_HOST: "schema-registry"
       SCHEMA_REGISTRY_PORT: 8081
-      # this is redundant but convenient
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       TOPIC_NAME: "$TOPIC_NAME"
-
-  consumer:
-    image: veniceframework/python-consumer
-    container_name: consumer
-    depends_on:
-      - broker-1
-      - broker-2
-      - broker-3
-      - schema-registry
-    environment:
-      BROKER: "broker-1:9092"
-      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
-      TOPIC_NAME: "$TOPIC_NAME"
+    networks:
+      - venice
 
   ksql-server:
     image: confluentinc/cp-ksql-server:5.4.1
@@ -124,17 +142,19 @@ services:
       - broker-3
       - schema-registry
     # no ports are exposed by default
-    expose:
-      - 8088
+    ports:
+      - 8088:8088
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+    networks:
+      - venice
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:5.4.1 
+    image: confluentinc/cp-kafka-connect:5.4.1
     hostname: kafka-connect
     container_name: kafka-connect
     depends_on:
@@ -143,6 +163,9 @@ services:
       - broker-3
       - schema-registry
     # exposes ports 8083 and 9092 by default
+    # publish port to work with venice CLI
+    ports:
+      - 8083:8083
     environment:
       # Required Kafka Connect Settings:
       # https://docs.confluent.io/current/installation/docker/config-reference.html#required-kafka-connect-settings
@@ -152,14 +175,14 @@ services:
       #
       ###### REQUIRED SETTINGS ######
       CONNECT_BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
-      CONNECT_GROUP_ID: 1
+      CONNECT_GROUP_ID: venice
       # The values for these three storage topics must be the same for all
       # workers with the same group.id
       CONNECT_CONFIG_STORAGE_TOPIC: "connect-1-config"
       CONNECT_OFFSET_STORAGE_TOPIC: "connect-1-offsets"
       CONNECT_STATUS_STORAGE_TOPIC: "connect-1-status"
       # These control the format of the data that will be written to Kafka for
-      # source connectors or read from Kafka for sink connectors 
+      # source connectors or read from Kafka for sink connectors
       CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
       # Converter class for internal values that implements the Converter interface
@@ -168,7 +191,7 @@ services:
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       ###### END REQUIRED SETTINGS ######
-      # This is the default port 
+      # This is the default port
       CONNECT_REST_PORT: 8083
       # These were not listed in the all settings page, but used in the demo above and tutorials
       # https://docs.confluent.io/5.0.0/installation/docker/docs/installation/connect-avro-jdbc.html#starting-up-confluent-platform-and-kafka-connect
@@ -179,22 +202,24 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+    networks:
+      - venice
 
   connector-init:
     image: alpine:3.11
     container_name: connector-init
     depends_on:
-      - kafka-connect 
-      - postgres 
+      - kafka-connect
+      - postgres
     command:
-      - sh 
+      - sh
       - -c
       - |
         apk add curl
         echo "Waiting for kafka-connect to start listening"
-        while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do 
+        while [ $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) -eq 000 ] ; do
           echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
-          sleep 5 
+          sleep 5
         done
         echo "kafka-connect is ready"
         nc -vz kafka-connect 8083
@@ -203,32 +228,69 @@ services:
         echo -e "\n--\n+> Creating postgres sink"
         echo \
         "{
-          \"name\" : \"postgres_buses_upsert_$TOPIC_NAME\",
+          \"name\" : \"postgres_${POSTGRES_DB}_$TOPIC_NAME\",
           \"config\" : {
             \"connector.class\" : \"io.confluent.connect.jdbc.JdbcSinkConnector\",
              \"connection.url\": \"jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB\",
              \"connection.user\": \"$POSTGRES_USER\",
              \"connection.password\": \"$POSTGRES_PASSWORD\",
              \"topics\": \"$TOPIC_NAME\",
+             \"value.converter\": \"io.confluent.connect.avro.AvroConverter\",
+             \"value.converter.schema.registry.url\": \"http://schema-registry:8081\",
+             \"key.converter\": \"org.apache.kafka.connect.storage.StringConverter\",
+             \"key.converter.schema.registry.url\": \"http://schema-registry:8081\",
              \"auto.create\":\"true\",
              \"auto.evolve\":\"true\",
              \"insert.mode\": \"upsert\",
-             \"pk.mode\": \"record_key\"
+             \"pk.mode\": \"record_key\",
+             \"pk.fields\": \"ROWKEY\"
           }
         }" | curl -s -X POST -d @- http://kafka-connect:8083/connectors -H "Content-Type: application/json" -w "\n"
-
+    networks:
+      - venice    
+    
   postgres:
     # https://hub.docker.com/_/postgres
-    # docker exec -it postgres psql --username=venice_user --dbname=buses
+    # docker exec -it postgres psql --username=venice_user --dbname=MY_DB
     build: ./postgres
     container_name: postgres
     # exposes port 5432 by default
     expose:
-      - $POSTGRES_PORT 
+      - $POSTGRES_PORT
     environment:
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       POSTGRES_DB: $POSTGRES_DB
     restart: unless-stopped
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - venice
 
-# licensing info for images: https://docs.confluent.io/current/installation/docker/image-reference.html
+  kafka-ui:
+    # https://hub.docker.com/r/obsidiandynamics/kafdrop
+    image: obsidiandynamics/kafdrop:3.24.0
+    container_name: kafka-ui
+    ports:
+      - 9000:9000
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    environment:
+      KAFKA_BROKERCONNECT: broker-1:9092,broker-2:9092,broker-3:9092
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_PORT: 9000
+      SERVER_SERVLET_CONTEXTPATH: "/"
+      MESSAGE_FORMAT: AVRO
+      SCHEMAREGISTRY_CONNECT: http://schema-registry:8081
+      #JMX_PORT:
+      #HOST:
+    networks:
+      - venice
+
+networks:
+  venice:
+    driver: bridge # bridge is the default        
+
+# licensing info for confluent images: https://docs.confluent.io/current/installation/docker/image-reference.html
