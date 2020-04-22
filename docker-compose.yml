@@ -11,8 +11,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     restart: unless-stopped
     volumes:
-      - ./data/zookeper/data:/var/lib/zookeeper/data
-      - ./data/zookeper/log:/var/lib/zookeeper/log
+      - ./data/zookeeper/data:/var/lib/zookeeper/data
+      - ./data/zookeeper/log:/var/lib/zookeeper/log
       - /var/log/zookeeper:/var/log/zookeeper
     networks:
       - venice
