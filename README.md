@@ -111,6 +111,8 @@ Save and close the file.
 
 `venice up`
 
+_this will take several minutes the first time it is launched_
+
 ### Show the status of all components of the pipeline
 
 `venice status` or `venice -st`
@@ -125,9 +127,9 @@ The output is piped to `less`, so you can navigate up and down through the logs 
 
 ### Show topics, schemas, and connectors
 
-`venice topics` or `venice -t`
-`venice schemas` | `venice -s`
-`venice connectors` | `venice -c`venice
+`venice topics` or `venice -t`<br>
+`venice schemas` or `venice -s`<br>
+`venice connectors` or `venice -c`venice
 
 ### Open the KSQL CLI to see the data being written to the topic.
 
