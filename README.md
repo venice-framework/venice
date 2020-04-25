@@ -177,7 +177,8 @@ _You can also use `exit`, `quit`, `\q`, or `CTRL + C`._
 ### GUI
 
 For a graphic interface for the Kafka cluster, navigate to `localhost:9000` in your web browser.
-Here you can view Kafka topics and consumer groups. You can examine individual messages to ensure they are being serialized and deserialized correctly. You can also verify message distribution among partitions to ensure balance.
+Here you can view Kafka topics and consumer groups. You can examine individual messages to ensure they are being serialized and deserialized correctly. You can also verify message distribution among partitions to ensure balance.<br>
+If following along with the Venice bus example, be sure to select "DEFAULT" as Key format.
 
 ### Shut down the Venice pipeline
 
