@@ -13,7 +13,6 @@ services:
     volumes:
       - ./data/zookeeper/data:/var/lib/zookeeper/data
       - ./data/zookeeper/log:/var/lib/zookeeper/log
-      - /var/log/zookeeper:/var/log/zookeeper
     networks:
       - venice
 
@@ -41,8 +40,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES 
-      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS 
+      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
+      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
     volumes:
       - ./data/broker-1/data:/var/lib/kafka/data
     networks:
@@ -64,8 +63,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES 
-      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS 
+      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
+      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
 
     networks:
       - venice
@@ -87,8 +86,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES 
-      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS 
+      KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
+      KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
     networks:
       - venice
     volumes:
@@ -251,8 +250,8 @@ services:
           }
         }" | curl -s -X POST -d @- http://kafka-connect:8083/connectors -H "Content-Type: application/json" -w "\n"
     networks:
-      - venice    
-    
+      - venice
+
   postgres:
     # https://hub.docker.com/_/postgres
     # docker exec -it postgres psql --username=venice_user --dbname=MY_DB
@@ -295,6 +294,6 @@ services:
 
 networks:
   venice:
-    driver: bridge # bridge is the default        
+    driver: bridge # bridge is the default
 
 # licensing info for confluent images: https://docs.confluent.io/current/installation/docker/image-reference.html
