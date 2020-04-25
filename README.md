@@ -121,15 +121,14 @@ _this will take several minutes the first time it is launched_
 press space bar to select before pressing enter/return
 
 `venice logs`
-![venice logs demo](link to venice_logs_demo.gif)
 
-The output is piped to `less`, so you can navigate up and down through the logs using the arrow keys or `j` and `k`. Use the spacebar to scroll down by “page”, and press `q` to quit.
+The output is piped to `less`, so you can navigate up and down through the logs using the arrow keys or `j` and `k`. Use the spacebar to scroll down by “page”. Press `q` to quit and `CMD + C` to exit.
 
 ### Show topics, schemas, and connectors
 
 `venice topics` or `venice -t`<br>
 `venice schemas` or `venice -s`<br>
-`venice connectors` or `venice -c`venice
+`venice connectors` or `venice -c`
 
 ### Open the KSQL CLI to see the data being written to the topic.
 
