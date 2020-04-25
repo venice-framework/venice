@@ -132,7 +132,8 @@ The output is piped to `less`, so you can navigate up and down through the logs 
 
 ### Open the KSQL CLI to see the data being written to the topic.
 
-This will download the KSQL CLI if you have not already used it. There will be a notable delay as it loads for the first time.
+_This will download the KSQL CLI if you have not already used it. There will be a notable delay as it loads for the first time._
+
 `venice ksql`
 
 _If you get an error message that `Remote server at http://ksql-server:8088 does not appear to be a valid KSQL server`, exit the KSQL CLI and try again._
