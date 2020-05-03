@@ -1,5 +1,5 @@
 ---
-version: "3.2"
+version: "3.3"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:5.4.1
@@ -39,9 +39,11 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "$AUTO_CREATE_TOPICS"
       KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
       KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
+      KAFKA_DEFAULT_REPLICATION_FACTOR: $DEFAULT_REPLICATION
+      KAFKA_NUM_PARTITIONS: $DEFAULT_PARTITIONS
     volumes:
       - ./data/broker-1/data:/var/lib/kafka/data
     networks:
@@ -62,10 +64,11 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "$AUTO_CREATE_TOPICS"
       KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
       KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
-
+      KAFKA_DEFAULT_REPLICATION_FACTOR: $DEFAULT_REPLICATION
+      KAFKA_NUM_PARTITIONS: $DEFAULT_PARTITIONS
     networks:
       - venice
     volumes:
@@ -85,9 +88,11 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "$AUTO_CREATE_TOPICS"
       KAFKA_LOG_RETENTION_BYTES: $LOG_RETENTION_BYTES
       KAFKA_LOG_RETENTION_HOURS: $LOG_RETENTION_HOURS
+      KAFKA_DEFAULT_REPLICATION_FACTOR: $DEFAULT_REPLICATION
+      KAFKA_NUM_PARTITIONS: $DEFAULT_PARTITIONS
     networks:
       - venice
     volumes:
@@ -153,6 +158,7 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_SINK_REPLICAS: 2
     networks:
       - venice
 
@@ -207,10 +213,26 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
     networks:
       - venice
-
+    command:
+      # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+      # Additional connector plugs can be added here to be installed on launch. Comment out if not needed
+      - bash
+      - -c
+      - |
+        echo "Installing connector plugins"
+        confluent-hub install --no-prompt jcustenborder/kafka-connect-twitter:0.3.33
+        # confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.2
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
   connector-init:
     image: alpine:3.11
     container_name: connector-init
+    # if you need to debug connector setup uncomment the next two lines.
+    # tty: true
+    # stdin_open: true
     depends_on:
       - kafka-connect
       - postgres
@@ -227,31 +249,20 @@ services:
         done
         echo "kafka-connect is ready"
         nc -vz kafka-connect 8083
-        echo "Sleeping for 2 mins (TODO: https://github.com/venice-framework/venice-python/issues/12)"
-        sleep 2m
-        echo -e "\n--\n+> Creating postgres sink"
-        echo \
-        "{
-          \"name\" : \"postgres_${POSTGRES_DB}_$TOPIC_NAME\",
-          \"config\" : {
-            \"connector.class\" : \"io.confluent.connect.jdbc.JdbcSinkConnector\",
-             \"connection.url\": \"jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB\",
-             \"connection.user\": \"$POSTGRES_USER\",
-             \"connection.password\": \"$POSTGRES_PASSWORD\",
-             \"topics\": \"$TOPIC_NAME\",
-             \"value.converter\": \"io.confluent.connect.avro.AvroConverter\",
-             \"value.converter.schema.registry.url\": \"http://schema-registry:8081\",
-             \"key.converter\": \"org.apache.kafka.connect.storage.StringConverter\",
-             \"key.converter.schema.registry.url\": \"http://schema-registry:8081\",
-             \"auto.create\":\"true\",
-             \"auto.evolve\":\"true\",
-             \"insert.mode\": \"upsert\",
-             \"pk.mode\": \"record_key\",
-             \"pk.fields\": \"ROWKEY\"
-          }
-        }" | curl -s -X POST -d @- http://kafka-connect:8083/connectors -H "Content-Type: application/json" -w "\n"
+        #
+        chmod 777 -R connectors
+        for f in ./connectors/*
+        do /
+        echo "Processing $$f file..."
+        jq . $$f |
+        exec curl -s -X POST -d @- http://kafka-connect:8083/connectors -H "Content-Type: application/json" -w "\n"
+        done
+        echo "All connectors added..."
+
     networks:
       - venice
+    volumes:
+      - ./connectors:/connectors
 
   postgres:
     # https://hub.docker.com/_/postgres

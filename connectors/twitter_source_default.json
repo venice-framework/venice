@@ -1,0 +1,16 @@
+{
+  "name": "twitter-source",
+  "config": {
+    "connector.class": "com.github.jcustenborder.kafka.connect.twitter.TwitterSourceConnector",
+    "twitter.oauth.accessToken": "",
+    "twitter.oauth.accessTokenSecret": "",
+    "twitter.oauth.consumerSecret": "",
+    "twitter.oauth.consumerKey": "",
+    "tasks.max": "10",
+    "kafka.status.topic": "tweets",
+    "kafka.delete.topic": "deletes",
+    "process.deletes": "false",
+    "filter.userIds": "",
+    "filter.keywords": ""
+  }
+}

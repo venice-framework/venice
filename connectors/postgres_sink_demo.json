@@ -1,17 +1,18 @@
 {
-  "name": "babyu",
+  "name": "buses",
   "config": {
+    "connection.url": "jdbc:postgresql://postgres:5432/venice",
     "connection.user": "venice_user",
     "connection.password": "venice",
     "topics": "bus_locations",
     "value.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url": "http://schema-registry:8081",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
     "auto.create": "true",
     "auto.evolve": "true",
     "insert.mode": "upsert",
-    "tasks.max": "9",
-    "connection.url": "jdbc:postgresql://postgres:5432/buses",
+    "tasks.max": "3",
     "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
     "pk.mode": "record_key",
     "pk.fields": "ROWKEY"

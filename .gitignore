@@ -1,2 +1,4 @@
 .DS_Store
 data/
+connectors/twitter_source.json
+test.md
